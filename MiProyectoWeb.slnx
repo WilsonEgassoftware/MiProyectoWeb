@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="MiProyectoWeb.csproj" />
+  <Project Path="MiProyectoWeb.csproj">
+    <BuildType Project="Release" />
+  </Project>
 </Solution>
