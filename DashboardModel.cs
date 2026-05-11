@@ -140,14 +140,15 @@ namespace MiProyectoWeb.Pages
     }
 }
 
-// Este fichero se convierte en backup para evitar el conflicto de tipos
-// con la implementación real en Pages\Dashboard.cshtml.cs.
-// Si quieres eliminarlo, bórralo del proyecto desde el Explorador de soluciones.
+// Copia de seguridad renombrada para evitar conflicto de tipos con Pages\Dashboard.cshtml.cs.
+// Este fichero ya no define DashboardModel en el namespace MiProyectoWeb.Pages.
+// Si confirmas que todo compila bien, puedes borrar este archivo del proyecto.
 
 namespace MiProyectoWeb.Internal
 {
-    // Nombre cambiado a DashboardModelBackup para evitar duplicados
+    // Clase backup para evitar duplicados en el namespace principal.
     internal class DashboardModelBackup
     {
+        // Mantener aquí cualquier código histórico si lo deseas.
     }
 }
