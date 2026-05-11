@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.AspNetCore; // 👈 Referencia directa al helper nativo de ASP.NET Core
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting; // 👈 ESTA LÍNEA FALTABA
 
 namespace MiProyectoWeb
 {
@@ -13,10 +13,10 @@ namespace MiProyectoWeb
         [STAThread]
         static void Main()
         {
-            // 1. Arranca el servidor web integrado de fondo en HTTPS (Puerto 5001)
+            // Arranca el servidor web en segundo plano
             Task.Run(() => StartWebServer());
 
-            // 2. Tu interfaz de Windows Forms clásica libre de errores
+            // Inicia Windows Forms
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
@@ -24,39 +24,44 @@ namespace MiProyectoWeb
 
         private static void StartWebServer()
         {
-            // 🚀 Solución definitiva: Usamos 'WebHost.CreateDefaultBuilder'
-            // Este método inicializa automáticamente el servidor Kestrel, las rutas de IIS y la configuración
-            // de forma nativa sin requerir declarar manualmente la clase 'WebHostBuilder'.
-            var host = WebHost.CreateDefaultBuilder()
-                .UseKestrel(options =>
+            var host = Host.CreateDefaultBuilder()
+                .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    options.ListenLocalhost(5000); // Puerto HTTP estándar
-                    options.ListenLocalhost(5001, listenOptions =>
+                    webBuilder.UseKestrel(options =>
                     {
-                        listenOptions.UseHttps(); // Habilita HTTPS de forma segura
-                    });
-                })
-                .ConfigureServices(services =>
-                {
-                    services.AddRazorPages();
-                    services.AddDistributedMemoryCache();
-                    services.AddSession(options =>
-                    {
-                        options.IdleTimeout = TimeSpan.FromMinutes(20);
-                        options.Cookie.HttpOnly = true;
-                        options.Cookie.IsEssential = true;
-                    });
-                })
-                .Configure(app =>
-                {
-                    app.UseHttpsRedirection(); // Forzar redirección HTTPS
-                    app.UseStaticFiles();
-                    app.UseRouting();
-                    app.UseSession();
+                        options.ListenLocalhost(5000);
 
-                    app.UseEndpoints(endpoints =>
+                        options.ListenLocalhost(5001, listenOptions =>
+                        {
+                            listenOptions.UseHttps();
+                        });
+                    });
+
+                    webBuilder.ConfigureServices(services =>
                     {
-                        endpoints.MapRazorPages();
+                        services.AddRazorPages();
+
+                        services.AddDistributedMemoryCache();
+
+                        services.AddSession(options =>
+                        {
+                            options.IdleTimeout = TimeSpan.FromMinutes(20);
+                            options.Cookie.HttpOnly = true;
+                            options.Cookie.IsEssential = true;
+                        });
+                    });
+
+                    webBuilder.Configure(app =>
+                    {
+                        app.UseHttpsRedirection();
+                        app.UseStaticFiles();
+                        app.UseRouting();
+                        app.UseSession();
+
+                        app.UseEndpoints(endpoints =>
+                        {
+                            endpoints.MapRazorPages();
+                        });
                     });
                 })
                 .Build();
