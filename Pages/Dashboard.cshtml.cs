@@ -34,7 +34,7 @@ namespace MiProyectoWeb.Pages
         public double NuevoPrecio { get; set; }
         [BindProperty]
         public int NuevoStock { get; set; }
-        
+
         [BindProperty]
         public string CedulaProveedor { get; set; } = string.Empty; // Dato Sensible a Validar
 
@@ -65,8 +65,8 @@ namespace MiProyectoWeb.Pages
 
         public IActionResult OnPostAgregarProductoAdmin()
         {
-            // 🚨 VALIDACIÓN BACK-END DEL DATO SENSIBLE (CÉDULA)
-            if (!MiProyectoWeb.Helpers.CedulaValidator.ValidarCedulaEcuatoriana(CedulaProveedor))
+            // 🚨 VALIDACIÓN BACK-END DEL DATO SENSIBLE (CÉDULA ECUATORIANA)
+            if (!ValidarCedulaEcuatoriana(CedulaProveedor))
             {
                 ErrorMessage = "Error de Servidor: La Cédula del proveedor ingresada no es válida en Ecuador.";
                 return Page();
@@ -100,13 +100,39 @@ namespace MiProyectoWeb.Pages
         {
             new Alimento { Id = 1, Nombre = "Arroz Super Extra (1kg)", Categoria = "Granos", Precio = 1.25, Stock = 50, ImagenUrl = "🌾" }
         };
-    }
-}
 
-namespace MiProyectoWeb.Internal
-{
-    internal class DashboardModelBackup
-    {
-        // Copia de seguridad - no contiene la definición pública de DashboardModel
+        // Algoritmo de validación del dígito verificador de Ecuador integrado localmente
+        private bool ValidarCedulaEcuatoriana(string cedula)
+        {
+            if (string.IsNullOrWhiteSpace(cedula) || cedula.Length != 10)
+                return false;
+
+            if (!long.TryParse(cedula, out _))
+                return false;
+
+            int provincia = int.Parse(cedula.Substring(0, 2));
+            if (provincia < 1 || provincia > 24)
+                return false;
+
+            int tercerDigito = int.Parse(cedula.Substring(2, 1));
+            if (tercerDigito < 0 || tercerDigito > 6)
+                return false;
+
+            int[] coeficientes = { 2, 1, 2, 1, 2, 1, 2, 1, 2 };
+            int suma = 0;
+
+            for (int i = 0; i < 9; i++)
+            {
+                int valor = int.Parse(cedula.Substring(i, 1)) * coeficientes[i];
+                if (valor >= 10)
+                    valor -= 9;
+                suma += valor;
+            }
+
+            int digitoVerificadorEsperado = (suma % 10 == 0) ? 0 : 10 - (suma % 10);
+            int digitoVerificadorReal = int.Parse(cedula.Substring(9, 1));
+
+            return digitoVerificadorEsperado == digitoVerificadorReal;
+        }
     }
 }

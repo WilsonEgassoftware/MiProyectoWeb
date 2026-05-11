@@ -1,6 +1,12 @@
-﻿using System;
+﻿// 🚨 ALIAS DE COMPATIBILIDAD CRUCIAL PARA .NET FRAMEWORK CLÁSICO
+using WebApplication = Microsoft.AspNetCore.Builder.WebApplication;
+
+using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
 
 namespace MiProyectoWeb
 {
@@ -13,27 +19,23 @@ namespace MiProyectoWeb
         [STAThread]
         static void Main()
         {
-#if USE_ASP_NET_CORE
-            // Si defines la constante de compilación USE_ASP_NET_CORE y agregas
-            // las referencias necesarias a ASP.NET Core (y migras a .NET 6+),
-            // este código arrancará el servidor web en segundo plano.
+            // 1. Arranca el servidor web ASP.NET Core en segundo plano usando HTTPS (Puerto 5001)
             Task.Run(() => StartWebServer());
-#endif
-
-            // Tu base principal de Windows Forms (No se toca ni se borra)
+                
+            // 2. Tu base principal de Windows Forms (No se toca ni se borra)
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
         }
 
-#if USE_ASP_NET_CORE
         /// <summary>
-        /// Inicializa el motor de ASP.NET Core para que tus Razor Pages, sesiones y captcha funcionen.
-        /// (Sólo se compila si se define USE_ASP_NET_CORE)
+        /// Inicializa el motor de ASP.NET Core para que tus Razor Pages, sesiones y validaciones funcionen.
+        /// Configurado para correr de forma segura bajo HTTPS.
         /// </summary>
         private static void StartWebServer()
         {
-            var builder = Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder();
+            // Gracias al alias de la línea 2, el compilador sabe exactamente qué clase usar aquí
+            var builder = WebApplication.CreateBuilder();
 
             // Configurar servicios necesarios para las Razor Pages y las Sesiones web
             builder.Services.AddRazorPages();
@@ -45,13 +47,20 @@ namespace MiProyectoWeb
                 options.Cookie.IsEssential = true;
             });
 
-            // Configurar el puerto web local (ejemplo: http://localhost:5000)
+            // Configurar Kestrel para escuchar en HTTP (5000) y de forma segura en HTTPS (5001)
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(5000);
+                options.ListenLocalhost(5000); // Puerto HTTP estándar
+                options.ListenLocalhost(5001, listenOptions =>
+                {
+                    listenOptions.UseHttps(); // 👈 Activa la capa de encriptación SSL/TLS de forma segura
+                });
             });
 
             var app = builder.Build();
+
+            // Forzar redirección automática de HTTP a HTTPS
+            app.UseHttpsRedirection();
 
             app.UseStaticFiles();
             app.UseRouting();
@@ -64,6 +73,5 @@ namespace MiProyectoWeb
 
             app.Run();
         }
-#endif
     }
 }
