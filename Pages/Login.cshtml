@@ -1,0 +1,60 @@
+@page "/"
+@model MiProyectoWeb.Pages.LoginModel
+@{
+    Layout = null; // Carga de forma independiente para que no requiera _Layout.cshtml obligatoriamente
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesión - Comisariato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h4 class="mb-0">Control de Acceso</h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger text-center py-2" role="alert">
+                            ⚠️ @Model.ErrorMessage
+                        </div>
+                    }
+
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Usuario</label>
+                            <input type="text" asp-for="Username" class="form-control" placeholder="Ej: admin o user" required />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contraseña</label>
+                            <input type="password" asp-for="Password" class="form-control" placeholder="••••••••" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-2 fw-bold mt-2">Entrar al Sistema</button>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-muted text-center small py-3 bg-light">
+                    <span class="fw-bold text-dark">Usuarios de prueba:</span><br />
+                    <span>Admin: <strong>admin</strong> / <strong>admin123</strong></span><br />
+                    <span>Usuario común: <strong>user</strong> / <strong>user123</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
