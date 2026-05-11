@@ -1,207 +1,104 @@
 @page
 @model MiProyectoWeb.Pages.DashboardModel
 @{
-    ViewData["Title"] = "Panel de Alimentos";
+    ViewData["Title"] = "Panel de Control";
 }
-<html>
-<div class="container mt-4">
-    <div class="card shadow-sm border-0 mb-4 bg-dark text-white">
-        <div class="card-body d-flex justify-content-between align-items-center py-3">
-            <div>
-                <h3 class="mb-0">Comisariato Express 🛒</h3>
-                <small class="text-white-50">Sesión iniciada como: <strong>@Model.Usuario</strong> (@Model.Rol)</small>
-            </div>
-            <form method="post" asp-page-handler="Logout">
-                <button type="submit" class="btn btn-outline-danger btn-sm fw-bold">Cerrar Sesión</button>
-            </form>
-        </div>
-    </div>
 
-    @if (TempData["MensajeExito"] != null)
+<div class="container mt-4">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm text-center" role="alert">
-            🎉 <strong>@TempData["MensajeExito"]</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="alert alert-danger text-center">⚠️ @Model.ErrorMessage</div>
     }
 
     @if (Model.Rol == "Admin")
     {
         <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-warning text-dark fw-bold">
-                        Añadir Nuevo Alimento al Stock
-                    </div>
+            <div class="col-md-5">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-dark text-white fw-bold">Registrar Alimento (Con Validación Server-Side)</div>
                     <div class="card-body">
                         <form method="post" asp-page-handler="AgregarProductoAdmin">
-                            <div class="mb-2">
-                                <label class="form-label small">Nombre del Alimento</label>
-                                <input type="text" asp-for="NuevoNombre" class="form-control" required />
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-danger">Cédula del Proveedor (Dato Sensible - Validado en Servidor)</label>
+                                <input type="text" asp-for="CedulaProveedor" class="form-control" placeholder="Ej: 1726354890" required />
+                                <div class="form-text text-muted">Se validará mediante algoritmo de la base de datos fiscal en el backend.</div>
                             </div>
-                            <div class="mb-2">
-                                <label class="form-label small">Categoría</label>
-                                <input type="text" asp-for="NuevaCategoria" class="form-control" placeholder="Ej: Carnes, Frutas" required />
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Categoría del Producto</label>
+                                <select id="ddlCategoria" asp-for="CategoriaSeleccionada" class="form-select" required>
+                                    <option value="">-- Seleccione una Categoría --</option>
+                                    @foreach (var cat in Model.Categorias)
+                                    {
+                                        <option value="@cat">@cat</option>
+                                    }
+                                </select>
                             </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Subcategoría / Marca Relacionada</label>
+                                <select id="ddlSubcategoria" asp-for="SubcategoriaSeleccionada" class="form-select" required disabled>
+                                    <option value="">-- Primero seleccione una Categoría --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Especificación del Nombre</label>
+                                <input type="text" asp-for="NuevoNombre" class="form-control" placeholder="Ej: Funda Mediana" required />
+                            </div>
+
                             <div class="row">
-                                <div class="col-6 mb-2">
-                                    <label class="form-label small">Precio ($)</label>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold">Precio ($)</label>
                                     <input type="number" step="0.01" asp-for="NuevoPrecio" class="form-control" required />
                                 </div>
-                                <div class="col-6 mb-2">
-                                    <label class="form-label small">Stock inicial</label>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold">Stock</label>
                                     <input type="number" asp-for="NuevoStock" class="form-control" required />
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-warning w-100 mt-2 fw-bold text-dark">Registrar en Inventario</button>
+
+                            <button type="submit" class="btn btn-success w-100 fw-bold">Guardar en Base de Datos</button>
                         </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-secondary text-white fw-bold">
-                        Inventario en Tiempo Real
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Icono</th>
-                                    <th>Nombre</th>
-                                    <th>Categoría</th>
-                                    <th>Precio</th>
-                                    <th class="text-center">Stock</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var alimento in DashboardModel.InventarioAlimentos)
-                                {
-                                    <tr>
-                                        <td class="fs-4 text-center">@alimento.ImagenUrl</td>
-                                        <td class="fw-bold">@alimento.Nombre</td>
-                                        <td><span class="badge bg-light text-dark">@alimento.Categoria</span></td>
-                                        <td class="text-success fw-bold">$@alimento.Precio.ToString("0.00")</td>
-                                        <td class="text-center">
-                                            @if (alimento.Stock <= 5)
-                                            {
-                                                <span class="badge bg-danger">@alimento.Stock unidades ¡Pocas!</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-success">@alimento.Stock u.</span>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
-    else if (Model.Rol == "Usuario")
-    {
-        <div class="row">
-            <div class="col-md-8 mb-4">
-                <h4 class="mb-3 text-secondary">Catálogo de Alimentos Disponibles</h4>
-                <div class="row row-cols-1 row-cols-md-2 g-3">
-                    @foreach (var alimento in DashboardModel.InventarioAlimentos)
-                    {
-                        <div class="col">
-                            <div class="card h-100 shadow-xs border-0 rounded-3">
-                                <div class="card-body d-flex align-items-center">
-                                    <div class="fs-1 me-3 p-3 bg-light rounded-circle">
-                                        @alimento.ImagenUrl
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <span class="text-muted small">@alimento.Categoria</span>
-                                        <h5 class="card-title mb-1">@alimento.Nombre</h5>
-                                        <h6 class="text-success mb-2 fw-bold">$@alimento.Precio.ToString("0.00")</h6>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="small text-muted">Disponibles: @alimento.Stock</span>
-                                            
-                                            @if (alimento.Stock > 0)
-                                            {
-                                                <form method="post" asp-page-handler="AgregarAlCarrito">
-                                                    <input type="hidden" name="productoId" value="@alimento.Id" />
-                                                    <button type="submit" class="btn btn-outline-success btn-sm fw-bold">+ Añadir</button>
-                                                </form>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-danger">Agotado</span>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 position-sticky" style="top: 20px;">
-                    <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
-                        <span>Mi Carrito 🛒</span>
-                        @if (Model.Carrito.Any())
-                        {
-                            <form method="post" asp-page-handler="VaciarCarrito" class="m-0">
-                                <button type="submit" class="btn btn-link btn-sm text-white text-decoration-none p-0">Vaciar todo</button>
-                            </form>
-                        }
-                    </div>
-                    <div class="card-body">
-                        @if (!Model.Carrito.Any())
-                        {
-                            <div class="text-center py-4 text-muted">
-                                <p class="mb-0">El carrito está vacío.</p>
-                                <small>Haz clic en "+ Añadir" sobre cualquier alimento.</small>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-3">
-                                    <thead>
-                                        <tr class="small text-muted">
-                                            <th>Item</th>
-                                            <th class="text-center">Cant.</th>
-                                            <th class="text-end">Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in Model.Carrito)
-                                        {
-                                            <tr>
-                                                <td class="small fw-bold">@item.Alimento.Nombre</td>
-                                                <td class="text-center small">@item.Cantidad</td>
-                                                <td class="text-end small">$@item.Subtotal.ToString("0.00")</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <hr />
-
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="fw-bold">Total a pagar:</span>
-                                <span class="fs-4 fw-bold text-success">$@Model.TotalPagar.ToString("0.00")</span>
-                            </div>
-
-                            <form method="post" asp-page-handler="FinalizarCompra">
-                                <button type="submit" class="btn btn-success w-100 fw-bold py-2">Completar Pedido</button>
-                            </form>
-                        }
                     </div>
                 </div>
             </div>
         </div>
     }
 </div>
-</html>
+
+@section Scripts {
+    <script>
+        document.getElementById("ddlCategoria").addEventListener("change", async function() {
+            const categoria = this.value;
+            const ddlSub = document.getElementById("ddlSubcategoria");
+            
+            ddlSub.innerHTML = '<option value="">Cargando opciones...</option>';
+            ddlSub.disabled = true;
+
+            if (!categoria) {
+                ddlSub.innerHTML = '<option value="">-- Primero seleccione una Categoría --</option>';
+                return;
+            }
+
+            try {
+                // Petición al Handler HTTP Get de Razor Pages
+                const response = await fetch(`?handler=Subcategorias&categoria=${encodeURIComponent(categoria)}`);
+                const data = await response.json();
+
+                ddlSub.innerHTML = '<option value="">-- Seleccione Subcategoría --</option>';
+                data.forEach(item => {
+                    const opt = document.createElement("option");
+                    opt.value = item;
+                    opt.textContent = item;
+                    ddlSub.appendChild(opt);
+                });
+                ddlSub.disabled = false;
+            } catch (error) {
+                console.error("Error al obtener subcategorías:", error);
+                ddlSub.innerHTML = '<option value="">Error al cargar datos</option>';
+            }
+        });
+    </script>
+}
