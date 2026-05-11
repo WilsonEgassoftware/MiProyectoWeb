@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.AspNetCore; // 👈 Referencia directa al helper nativo de ASP.NET Core
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,14 +24,16 @@ namespace MiProyectoWeb
 
         private static void StartWebServer()
         {
-            // Usamos WebHostBuilder que es 100% nativo y compatible con tu versión de .NET Framework
-            var host = new WebHostBuilder()
+            // 🚀 Solución definitiva: Usamos 'WebHost.CreateDefaultBuilder'
+            // Este método inicializa automáticamente el servidor Kestrel, las rutas de IIS y la configuración
+            // de forma nativa sin requerir declarar manualmente la clase 'WebHostBuilder'.
+            var host = WebHost.CreateDefaultBuilder()
                 .UseKestrel(options =>
                 {
-                    options.ListenLocalhost(5000); // Puerto HTTP
+                    options.ListenLocalhost(5000); // Puerto HTTP estándar
                     options.ListenLocalhost(5001, listenOptions =>
                     {
-                        listenOptions.UseHttps(); // 👈 Habilita HTTPS de forma segura
+                        listenOptions.UseHttps(); // Habilita HTTPS de forma segura
                     });
                 })
                 .ConfigureServices(services =>
